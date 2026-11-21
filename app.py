@@ -1419,7 +1419,7 @@ class ResumeApp:
                                 key="analyze_ai_button")
 
                 if analyze_ai:
-                    with st.spinner(f"Analyzing your resume with {ai_model}..."):
+                    with st.spinner("Analyzing your resume with Google Gemini AI..."):
                         # Get file content
                         text = ""
                         try:
