@@ -124,7 +124,7 @@ class ResumeAnalyzer:
         
     def extract_text_from_pdf(self, file):
         try:
-            import PyPDF2
+            import pypdf
             import io
             
             # Create a PDF reader object
@@ -138,16 +138,35 @@ class ResumeAnalyzer:
                 file_content = file
                 
             # Create BytesIO from bytes content
-            pdf_reader = PyPDF2.PdfReader(io.BytesIO(file_content))
+            pdf_reader = pypdf.PdfReader(io.BytesIO(file_content))
             
             # Extract text from all pages
             text = ""
             for page in pdf_reader.pages:
-                text += page.extract_text() + "\n"
+                page_text = page.extract_text()
+                if page_text:
+                    text += page_text + "\n"
                 
             return text
         except Exception as e:
-            raise Exception(f"Error extracting text from PDF: {str(e)}")
+            # Fallback to pdfplumber if pypdf fails
+            try:
+                import pdfplumber
+                import io
+                if hasattr(file, 'read'):
+                    file_content = file.read()
+                    file.seek(0)
+                else:
+                    file_content = file
+                with pdfplumber.open(io.BytesIO(file_content)) as pdf:
+                    text = ""
+                    for p in pdf.pages:
+                        extracted = p.extract_text()
+                        if extracted:
+                            text += extracted + "\n"
+                    return text
+            except Exception:
+                raise Exception(f"Error extracting text from PDF: {str(e)}")
             
     def extract_text_from_docx(self, docx_file):
         """Extract text from a DOCX file"""

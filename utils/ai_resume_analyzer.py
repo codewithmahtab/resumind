@@ -8,13 +8,35 @@ if not hasattr(builtins, "xrange"):
 
 import google.generativeai as genai
 import pdfplumber
-from pdf2image import convert_from_path
-import pytesseract
 import tempfile
 import requests
 import json
 import math
 import re
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, Flowable, KeepTogether
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
+from reportlab.graphics.shapes import Drawing, Rect, String, Line
+from reportlab.graphics.charts.piecharts import Pie
+from reportlab.graphics.charts.barcharts import VerticalBarChart
+from reportlab.graphics.charts.linecharts import HorizontalLineChart
+from reportlab.graphics.charts.legends import Legend
+import io
+import datetime
+
+def clean_markdown(text):
+    """Helper function to clean markdown formatting from text"""
+    if not text:
+        return ""
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)
+    text = re.sub(r'\*(.*?)\*', r'\1', text)
+    text = re.sub(r'__(.*?)__', r'\1', text)
+    text = re.sub(r'_(.*?)_', r'\1', text)
+    text = re.sub(r'^#{1,6}\s+', '', text, flags=re.MULTILINE)
+    text = re.sub(r'\[(.*?)\]\(.*?\)', r'\1', text)
+    return text.strip()
 
 
 class AIResumeAnalyzer:
@@ -30,142 +52,57 @@ class AIResumeAnalyzer:
             genai.configure(api_key=self.google_api_key)
     
     def extract_text_from_pdf(self, pdf_file):
-        """Extract text from PDF using pdfplumber and OCR if needed"""
+        """Extract text from PDF using pdfplumber with fallback to pypdf"""
         text = ""
-        
-        # Save the uploaded file to a temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.pdf') as temp_file:
             if hasattr(pdf_file, 'getbuffer'):
                 temp_file.write(pdf_file.getbuffer())
             elif hasattr(pdf_file, 'read'):
                 temp_file.write(pdf_file.read())
-                pdf_file.seek(0)  # Reset file pointer
+                pdf_file.seek(0)
             else:
-                # If it's already bytes
                 temp_file.write(pdf_file)
             temp_path = temp_file.name
-        
+
         try:
-            # Try direct text extraction with pdfplumber
+            # 1. Primary extraction with pdfplumber
             try:
                 with pdfplumber.open(temp_path) as pdf:
                     for page in pdf.pages:
-                        try:
-                            # Suppress specific warnings about PDFColorSpace conversion
-                            import warnings
-                            with warnings.catch_warnings():
-                                warnings.filterwarnings("ignore", message=".*PDFColorSpace.*")
-                                warnings.filterwarnings("ignore", message=".*Cannot convert.*")
-                                page_text = page.extract_text()
-                                if page_text:
-                                    text += page_text + "\n"
-                        except Exception as e:
-                            # Don't show these specific errors to the user
-                            if "PDFColorSpace" not in str(e) and "Cannot convert" not in str(e):
-                                st.warning(f"Error extracting text from page with pdfplumber: {e}")
-            except Exception as e:
-                st.warning(f"pdfplumber extraction failed: {e}")
-            
-            # If pdfplumber extraction worked, return the text
+                        page_text = page.extract_text()
+                        if page_text:
+                            text += page_text + "\n"
+            except Exception:
+                pass
+
             if text.strip():
-                os.unlink(temp_path)  # Clean up the temp file
+                try:
+                    os.unlink(temp_path)
+                except Exception:
+                    pass
                 return text.strip()
-            
-            # Try PyPDF2 as a fallback
-            st.info("Trying PyPDF2 extraction method...")
+
+            # 2. Fallback extraction with pypdf
             try:
                 import pypdf
-                pdf_text = ""
                 with open(temp_path, 'rb') as file:
                     pdf_reader = pypdf.PdfReader(file)
                     for page in pdf_reader.pages:
                         page_text = page.extract_text()
                         if page_text:
-                            pdf_text += page_text + "\n"
-                
-                if pdf_text.strip():
-                    os.unlink(temp_path)  # Clean up the temp file
-                    return pdf_text.strip()
-            except Exception as e:
-                st.warning(f"PyPDF2 extraction failed: {e}")
-            
-            # If we got here, both extraction methods failed
-            st.warning("Standard text extraction methods failed. Your PDF might be image-based or scanned.")
-            
-            # Try OCR as a last resort
+                            text += page_text + "\n"
+            except Exception:
+                pass
+
+        finally:
             try:
-                # Check if we can import the required OCR libraries
-                import pytesseract
-                from pdf2image import convert_from_path
-                
-                st.info("Attempting OCR for image-based PDF. This may take a moment...")
-                
-                # Check if poppler is installed
-                poppler_path = None
-                if os.name == 'nt':  # Windows
-                    # Try to find poppler in common locations
-                    possible_paths = [
-                        r'C:\poppler\Library\bin',
-                        r'C:\Program Files\poppler\bin',
-                        r'C:\Program Files (x86)\poppler\bin',
-                        r'C:\poppler\bin'
-                    ]
-                    for path in possible_paths:
-                        if os.path.exists(path):
-                            poppler_path = path
-                            st.success(f"Found Poppler at: {path}")
-                            break
-                    
-                    if not poppler_path:
-                        st.warning("Poppler not found in common locations. Using default path: C:\\poppler\\Library\\bin")
-                        poppler_path = r'C:\poppler\Library\bin'
-                
-                # Try to convert PDF to images
-                try:
-                    if poppler_path and os.name == 'nt':
-                        images = convert_from_path(temp_path, poppler_path=poppler_path)
-                    else:
-                        images = convert_from_path(temp_path)
-                    
-                    # Process each image with OCR
-                    ocr_text = ""
-                    for i, image in enumerate(images):
-                        st.info(f"Processing page {i+1} with OCR...")
-                        page_text = pytesseract.image_to_string(image)
-                        ocr_text += page_text + "\n"
-                    
-                    if ocr_text.strip():
-                        os.unlink(temp_path)  # Clean up the temp file
-                        return ocr_text.strip()
-                    else:
-                        st.error("OCR extraction yielded no text. Please check if the PDF contains actual text content.")
-                except Exception as e:
-                    st.error(f"PDF to image conversion failed: {e}")
-                    st.info("If you're on Windows, make sure Poppler is installed and in your PATH.")
-                    st.info("Download Poppler from: https://github.com/oschwartz10612/poppler-windows/releases/")
-            except ImportError as e:
-                st.error(f"OCR libraries not available: {e}")
-                st.info("Please install the required OCR libraries:")
-                st.code("pip install pytesseract pdf2image")
-                st.info("For Windows, also download and install:")
-                st.info("1. Tesseract OCR: https://github.com/UB-Mannheim/tesseract/wiki")
-                st.info("2. Poppler: https://github.com/oschwartz10612/poppler-windows/releases/")
-            except Exception as e:
-                st.error(f"OCR processing failed: {e}")
-        
-        except Exception as e:
-            st.error(f"PDF processing failed: {e}")
-        
-        # Clean up the temp file
-        try:
-            os.unlink(temp_path)
-        except:
-            pass
-        
-        # If all extraction methods failed, return an empty string
-        st.error("All text extraction methods failed. Please try a different PDF or manually extract the text.")
-        return ""
-    
+                if os.path.exists(temp_path):
+                    os.unlink(temp_path)
+            except Exception:
+                pass
+
+        return text.strip()
+
     def extract_text_from_docx(self, docx_file):
         """Extract text from DOCX file"""
         from docx import Document
@@ -195,7 +132,16 @@ class AIResumeAnalyzer:
             return {"error": "Google API key is not configured. Please add it to your .env file."}
         
         try:
-            model = genai.GenerativeModel("gemini-2.5-flash")
+            # Try available models in order of stability/speed
+            model = None
+            for model_name in ["gemini-3.5-flash", "gemini-3.8-flash", "gemini-3.1-flash-lite"]:
+                try:
+                    model = genai.GenerativeModel(model_name)
+                    break
+                except Exception:
+                    continue
+            if not model:
+                model = genai.GenerativeModel("gemini-3.5-flash")
             
             base_prompt = f"""
             You are an expert resume analyst with deep knowledge of industry standards, job requirements, and hiring practices across various fields. Your task is to provide a comprehensive, detailed analysis of the resume provided.
@@ -1601,6 +1547,9 @@ class AIResumeAnalyzer:
             analysis_text = analysis_result.get("full_response", "")
             if not analysis_text:
                 analysis_text = analysis_result.get("analysis", "")
+
+            strengths = analysis_result.get("strengths", [])
+            weaknesses = analysis_result.get("weaknesses", [])
                 
             overall_assessment = ""
             if "## Overall Assessment" in analysis_text:
