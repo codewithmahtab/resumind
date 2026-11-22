@@ -1,0 +1,27 @@
+AARAV SHARMA
+aarav.sharma@example.com | +91 98765 43210 | Jaipur | linkedin.com/in/aarav-sample | github.com/aarav-sample
+
+SUMMARY
+Final-year B.Tech CSE student focused on data science and machine learning. Built forecasting and NLP projects with Python.
+
+EDUCATION
+B.Tech in Computer Science and Engineering, Demo Institute of Technology, 2026 | CGPA 8.1
+
+PROJECTS
+Sales Forecasting with XGBoost
+- Built a sales forecasting model on 3 years of store data using Python, Pandas and XGBoost, cutting error by 18%.
+- Deployed the model as a Flask API used by 2 teams in the college incubator.
+Resume Chatbot
+- Worked on a chatbot project using Python and NLP for answering student questions.
+
+EXPERIENCE
+Data Analyst Intern, Sample Analytics Pvt Ltd (May 2025 - Jul 2025)
+- Responsible for data cleaning tasks in internship.
+- Created Power BI dashboards for 4 departments, used weekly by 30 managers.
+- Automated a weekly Excel report with SQL and Python, saving 5 hours per week.
+
+SKILLS
+Python, Pandas, NumPy, SQL, scikit-learn, Machine Learning, Power BI, Excel, Git, Statistics, Communication, Teamwork
+
+ACHIEVEMENTS
+- Won 2nd place in a college hackathon among 60 teams.

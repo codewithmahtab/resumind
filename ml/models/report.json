@@ -1,0 +1,21 @@
+{
+  "dataset": "synthetic (generated from config/job_roles.py)",
+  "samples": 1360,
+  "classes": 17,
+  "test_size": 272,
+  "models": {
+    "Naive Bayes (baseline)": {
+      "accuracy": 0.8088,
+      "macro_f1": 0.8031
+    },
+    "Linear SVM": {
+      "accuracy": 0.8787,
+      "macro_f1": 0.8772
+    },
+    "Logistic Regression": {
+      "accuracy": 0.864,
+      "macro_f1": 0.8614
+    }
+  },
+  "deployed": "Logistic Regression"
+}

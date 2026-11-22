@@ -1,9 +1,4 @@
 @echo off
-REM Startup script for AI Resume Analyzer & Builder
-echo ========================================================
-echo      Starting AI Resume Analyzer & Builder
-echo ========================================================
-
-python -m streamlit run app.py
-
-pause
+cd /d "%~dp0"
+if not exist .venv\Scripts\python.exe (py -m venv .venv && .venv\Scripts\pip install -r requirements.txt)
+.venv\Scripts\python -m streamlit run app.py

@@ -136,3 +136,10 @@ Thumbs.db
 # Resume files uploaded by users
 uploads/
 resume_data.db
+# ResuMind 2.0
+.venv/
+.env
+data/
+*.db
+resume_data_export.xlsx
+.streamlit/secrets.toml
