@@ -5,7 +5,7 @@ import re
 from config.job_roles import JOB_ROLES
 
 EXTRA = """python, java, c++, c#, javascript, typescript, sql, golang, kotlin, swift, php, html, css, react, angular,
-vue.js, node.js, django, flask, fastapi, spring boot, rest api, graphql, mongodb, mysql, postgresql, redis, git, github,
+vue.js, node.js, express, next.js, redux, tailwind css, jwt, django, flask, fastapi, spring boot, rest api, graphql, mongodb, mysql, postgresql, redis, git, github,
 docker, kubernetes, aws, azure, gcp, linux, jenkins, terraform, ci/cd, pandas, numpy, scikit-learn, tensorflow, pytorch,
 keras, machine learning, deep learning, nlp, computer vision, opencv, data analysis, data visualization, statistics,
 excel, power bi, tableau, matplotlib, seaborn, spark, hadoop, big data, etl, a/b testing, llm, generative ai,
@@ -25,7 +25,9 @@ def role_skills(role):
             info = cat[role]
             out = []
             for s in info.get("required_skills", []) + info.get("recommended_skills", {}).get("technical", []):
-                for p in re.split(r"[/,]", s):
+                bits = [b for b in re.split(r"[/,]", s)]
+                # split "React/Angular/Vue" but keep "CI/CD", "UI/UX", "A/B testing" whole
+                for p in (bits if all(len(b.strip()) >= 4 for b in bits) else [s]):
                     p = _norm(p)
                     if len(p) > 1 and p not in _VAGUE and p not in out:
                         out.append(p)
@@ -47,8 +49,14 @@ def _vocab():
 VOCAB = _vocab()
 
 
+ALIASES = {"rest api": ["restful api", "rest apis", "restful apis", "restful"], "node.js": ["nodejs", "node"],
+           "javascript": ["js"], "machine learning": ["ml"], "postgresql": ["postgres"], "ci/cd": ["cicd"]}
+
+
 def find_skill(skill, text_lower):
-    return re.search(r"(?<![a-z0-9+#.])" + re.escape(skill) + r"(?![a-z0-9+#])", text_lower) is not None
+    # digits may follow (html5, css3); letters may not (java != javascript)
+    return any(re.search(r"(?<![a-z0-9+#.])" + re.escape(k) + r"(?![a-z+#])", text_lower)
+               for k in [skill] + ALIASES.get(skill, []))
 
 
 def extract_skills(text):

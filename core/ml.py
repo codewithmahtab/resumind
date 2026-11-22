@@ -101,7 +101,7 @@ def predict_role(text, k=3):
         _clf = joblib.load(MODEL)
     proba = _clf.predict_proba([text.lower()])[0]
     idx = np.argsort(proba)[::-1][:k]
-    return [(_clf.classes_[i], float(proba[i])) for i in idx]
+    return [(str(_clf.classes_[i]), float(proba[i])) for i in idx]
 
 
 def report():
@@ -113,7 +113,7 @@ def report():
 
 
 def match(resume_text, jd_text):
-    """Match % = 40% TF-IDF cosine similarity + 60% skill coverage of the JD's skills."""
+    """Match % = 30% TF-IDF cosine similarity + 70% skill coverage of the JD's skills."""
     tf = TfidfVectorizer(stop_words="english", ngram_range=(1, 2)).fit([resume_text, jd_text])
     cos = float(cosine_similarity(tf.transform([resume_text]), tf.transform([jd_text]))[0, 0])
     jd_sk = extract_skills(jd_text)
@@ -125,7 +125,7 @@ def match(resume_text, jd_text):
         if any(w in sent for w in ("must", "required", "strong", "proficien", "mandatory", "expert")):
             must.update(s for s in jd_sk if find_skill(s, sent))
     cover = len(matched) / len(jd_sk) if jd_sk else 0
-    pct = round(100 * (0.4 * min(1.0, cos * 2.2) + 0.6 * cover))
+    pct = round(100 * (0.3 * min(1.0, cos * 3) + 0.7 * cover))
     return {"pct": pct, "cosine": round(cos, 3), "matched": matched, "missing": missing,
             "must_missing": [s for s in missing if s in must], "jd_skills": jd_sk}
 

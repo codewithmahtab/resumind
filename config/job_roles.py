@@ -19,11 +19,11 @@ JOB_ROLES = {
             }
         },
         "Full Stack Developer": {
-            "required_skills": ["Frontend Tech", "Backend Tech", "Databases", "DevOps", "System Design", "APIs"],
+            "required_skills": ["HTML", "CSS", "JavaScript", "React", "Node.js", "Express", "MongoDB", "SQL", "REST API", "Git"],
             "description": "Handle both client and server-side development",
             "sections": ["Technical Skills", "Full Stack Projects", "Work Experience", "Education"],
             "recommended_skills": {
-                "technical": ["Frontend & Backend technologies", "Database design", "API development", "DevOps"],
+                "technical": ["TypeScript", "Database design", "Docker", "System Design"],
                 "soft": ["Versatility", "Project management", "Communication"]
             }
         },

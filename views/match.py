@@ -47,7 +47,7 @@ def render():
             ui.bignum(f"{len(r['matched'])}/{len(r['jd_skills'])}", "job skills you have")
         with c:
             ui.label("how it's computed")
-            st.caption(f"40% text similarity (TF-IDF cosine {r['cosine']}) + 60% coverage of the skills this job asks for.")
+            st.caption(f"30% text similarity (TF-IDF cosine {r['cosine']}) + 70% coverage of the skills this job asks for.")
         ui.label("matched")
         ui.chips(r["matched"], "ok")
         ui.label("missing · red ones are marked must-have in the JD")

@@ -5,16 +5,16 @@
   "test_size": 272,
   "models": {
     "Naive Bayes (baseline)": {
-      "accuracy": 0.8088,
-      "macro_f1": 0.8031
+      "accuracy": 0.7904,
+      "macro_f1": 0.7899
     },
     "Linear SVM": {
-      "accuracy": 0.8787,
-      "macro_f1": 0.8772
+      "accuracy": 0.8603,
+      "macro_f1": 0.8596
     },
     "Logistic Regression": {
-      "accuracy": 0.864,
-      "macro_f1": 0.8614
+      "accuracy": 0.8419,
+      "macro_f1": 0.8413
     }
   },
   "deployed": "Logistic Regression"

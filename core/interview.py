@@ -75,12 +75,19 @@ Return JSON: {{"score": 0-10 number, "good": "one sentence on what worked", "mis
         out["ai"] = True
         return out
     a = answer.lower()
-    kp = [k.lower() for k in q.get("key_points", [])]
-    hit = [k for k in kp if k.split()[0] in a]
     words = len(answer.split())
-    score = min(10, 3 + 5 * (len(hit) / len(kp) if kp else 0) + (2 if words >= 60 else 1 if words >= 30 else 0))
-    miss = [k for k in kp if k not in hit]
-    return {"score": round(score, 1), "ai": False,
-            "good": f"You covered: {', '.join(hit)}." if hit else "You attempted the question.",
-            "missing": f"Also cover: {', '.join(miss)}." if miss else "Add one concrete example with a number.",
-            "ideal": "Use STAR: describe the Situation, the Task, the Action you took, and the Result with a number."}
+    kp = [k.lower() for k in q.get("key_points", [])]
+    hit = [k for k in kp if k in a]
+    has_num = bool(re.search(r"\d|percent|%", a))
+    reason = any(w in a for w in ("because", "so that", "which", "resulted", "measured", "improved", "reduced", "learned", "chose"))
+    star = sum(w in a for w in ("situation", "task", "action", "result", "problem", "approach", "outcome")) >= 2
+    score = 2 + min(3, words / 30) + (2 if has_num else 0) + (1.5 if hit else 0) + (1.5 if reason or star else 0)
+    tips = []
+    if words < 40: tips.append("go deeper (aim for 60-120 words)")
+    if not has_num: tips.append("add a number or result")
+    if not (reason or star): tips.append("explain why you chose your approach")
+    if not hit and kp: tips.append(f"mention {kp[0]}")
+    return {"score": round(min(10, score), 1), "ai": False,
+            "good": "Clear, specific answer." if score >= 7 else "You answered the question directly." if words >= 15 else "You attempted it.",
+            "missing": ("Next time: " + "; ".join(tips) + ".") if tips else "Strong answer. Keep this structure.",
+            "ideal": "Use STAR: the Situation, the Task, the Action you took, and the Result with a number."}
